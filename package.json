@@ -6,7 +6,7 @@
   "scripts": {
     "build": "rimraf ./dist; tsc",
     "build:dev": "tsc -w",
-    "build:docs": "tsdocs",
+    "build:docs": "typedoc",
     "start:dev": "nodemon -w dist/",
     "crawl": "node dist/index.js",
     "changelog": "git log --all --graph --decorate --oneline > CHANGELOG; git add .; git commit -m \"update changelog\"; yarn version; git push --follow-tags; echo \"Released $npm_package_version\""
