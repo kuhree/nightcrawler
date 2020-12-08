@@ -1,8 +1,13 @@
-* 2c46386 (staging) some scpecial bits that ned work
-* daec96d (HEAD -> main) docs: add more to readme, and package
+* 7dc13d1 (HEAD -> main) feat: add tsdocs
+* 217f3a5 fix: install looping
+* 0004dc7 (tag: v1.0.3, origin/main) v1.0.3
+* 380f449 update changelog
+| * 2c46386 (staging) some scpecial bits that ned work
+|/  
+* daec96d docs: add more to readme, and package
 * e2d65f0 fiz: optomize \n\n
 * aeced73 moved puppCall
-* c0d3365 (tag: v1.0.2, origin/main) v1.0.2
+* c0d3365 (tag: v1.0.2) v1.0.2
 * 6ba479f update changelog
 * 8412519 (tag: v1.0.1) v1.0.1
 * 91c96ad update changelog
