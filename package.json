@@ -8,13 +8,13 @@
     "build:dev": "tsc -w",
     "start:dev": "nodemon -w dist/",
     "crawl": "node dist/index.js",
-    "changelog": "git log --all --graph --decorate --oneline > CHANGELOG; git add .; git commit -m \"update changelog\"; yarn version; git push --follow-tags; echo \"Released $npm_package_version\"",
-    "postinstall": "yarn && yarn build"
+    "changelog": "git log --all --graph --decorate --oneline > CHANGELOG; git add .; git commit -m \"update changelog\"; yarn version; git push --follow-tags; echo \"Released $npm_package_version\""
   },
   "dependencies": {
     "@types/puppeteer": "^3.0.2",
     "chalk": "^4.1.0",
     "prompt": "^1.0.0",
-    "puppeteer": "^5.4.0"
+    "puppeteer": "^5.4.0",
+    "typedoc": "^0.19.2"
   }
 }
