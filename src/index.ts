@@ -57,7 +57,7 @@ export class Crawler {
     // open a headless browser
     if (!this.browser) {
       onSuccess('Browser Opened\n');
-      this.browser = await puppeteer.launch({ headless: true });
+      this.browser = await puppeteer.launch({ headless: false });
     }
 
     // open a new tab
