@@ -75,9 +75,6 @@ To use NightCrawler, follow these steps:
 yarn crawl https://example.com
 ```
 
-Add run commands and examples you think users will find useful. Provide
-an options reference for bonus points!
-
 ## Contributing
 
 To contribute to NightCrawler, follow these steps:
