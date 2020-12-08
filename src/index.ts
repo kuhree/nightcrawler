@@ -12,19 +12,19 @@ export const onError = (error: Error) => {
   console.error(errorColor('❌: ' + error));
   throw error;
 };
+
 export const onSuccess = (msg: string) =>
   console.log(successColor('✅ : ' + msg));
-export const onInfo = (msg: string) =>
-  console.info(infoColor('🚀 : ' + msg));
+export const onInfo = (msg: string) => console.info(infoColor(msg));
 export const onWarning = (msg: string) =>
   console.info(warningColor('🚧 : ' + msg));
 
 export class Crawler {
   constructor(domain: string = process.argv[2]) {
-    onSuccess('Good Vibes and greater Ventures');
+    onSuccess('Good Vibes and greater Ventures\n');
 
     if (!domain) {
-      onError(new Error('Domain is required'));
+      onError(new Error('Domain is required\n'));
     }
 
     if (
@@ -32,12 +32,13 @@ export class Crawler {
         domain,
       )
     ) {
-      onError(new Error('Domain is invalid'));
+      onError(new Error('Domain is invalid\n'));
     }
 
     this.domain = domain;
     this.domainName = domain.split('//')[1].split('.')[0];
     this.allRoutes = [domain];
+    console.time(infoColor('Time'));
     this.crawl(domain);
   }
 
@@ -55,36 +56,42 @@ export class Crawler {
   async init() {
     // open a headless browser
     if (!this.browser) {
-      onSuccess('Browser Opened');
+      onSuccess('Browser Opened\n');
       this.browser = await puppeteer.launch({ headless: true });
     }
 
     // open a new tab
-    if (!this.page) {
-      onSuccess('Tab Opened');
+    if (this.browser && !this.page) {
+      onSuccess('Tab Opened\n');
       this.page = await this.browser.newPage();
+      process.argv[3] === '-i' &&
+        (await this.page.emulate(puppeteer.devices['iPhone X']));
     }
 
     return { browser: this.browser, page: this.page };
   }
 
-  async crawl(path: string) {
+  async crawl(
+    path: string,
+    index?: string | number | (string | number)[],
+  ) {
     const { page } = await this.init();
+    const pathIndex =
+      index ||
+      `${this.allRoutes.indexOf(path)}/${this.allRoutes.length}`;
+
+    // goto page and add to pastRoutes
+    process.argv[4] === '-d' && onInfo(`${pathIndex} - ${path}\n`);
 
     try {
       if (!this.pastRoutes.includes(path)) {
-        // goto page and add to pastRoutes
-        onInfo(
-          `Visiting ${path}: ${this.pastRoutes.indexOf(path)}/${
-            this.allRoutes.length
-          }`,
-        );
+        onInfo(`${pathIndex} - VISITNG - ${path}\n`);
         this.pastRoutes.push(path);
-        await page.goto(path, { waitUntil: 'load', timeout: 0 });
+        await page?.goto(path, { waitUntil: 'load', timeout: 0 });
 
         // take a screenshot
-        onInfo(`Screenshotting ${path}`);
-        await page.screenshot({
+        onInfo(`${pathIndex} - SCREENSHOT - ${path}\n`);
+        await page?.screenshot({
           path: `./screenshots/${this.domainName}/${path
             .replace(/http:\/\//gi, '')
             .replace(/https:\/\//gi, '')
@@ -93,7 +100,7 @@ export class Crawler {
         });
 
         // gather local links
-        onInfo(`Collecting pastRoutes on ${path}`);
+        onInfo(`${pathIndex} - SEARCHING - ${path}\n`);
 
         let localRoutes = await page?.evaluate(() =>
           Array.from(
@@ -102,28 +109,37 @@ export class Crawler {
           ),
         );
 
+        // filter out the landing-page and any routes we've already been to
         localRoutes = localRoutes
           ?.filter((route) => route !== '/')
-          .filter((route) => !this.pastRoutes.includes(route || ''));
+          .filter((route) => route && !this.pastRoutes.includes(route));
 
-        onInfo(
-          `Routes found at ${page?.url()}\n` +
-            localRoutes.map((route) => `    - ${route}`).join('\n'),
-        );
-
+        // put the `localRoutes` we just found and compare them to all the Routes
         this.allRoutes.push(
-          ...localRoutes.filter(
-            (route) => this.allRoutes.indexOf(route || '') === -1,
-          ),
+          ...(localRoutes?.filter(
+            (route) => route && this.allRoutes.indexOf(route) === -1,
+          ) || []),
         );
 
-        // serializes
-        await localRoutes.reduce(async (memo, route) => {
+        if (localRoutes && localRoutes.length > 0) {
+          onInfo(
+            `${pathIndex} - FOUND - ${path}\n` +
+              localRoutes.map((route) => `\t- ${route}`).join('\n') +
+              '\n',
+          );
+        }
+
+        // Serializes the async/await array.
+        // Creates a slight pause as we move through the web.
+        await localRoutes?.reduce(async (memo, route) => {
           await memo;
 
           await this.crawl(this.domain + route);
         }, this.wait(50));
 
+        // Are we done?
+        // Does every route from `allRoutes` have a match in the `pastRoutes`
+        //   we've been to?
         if (
           this.allRoutes
             .slice(1)
@@ -133,17 +149,17 @@ export class Crawler {
                 -1,
             )
         ) {
+          // if so,
           // close the tab
-          onWarning('Tab Closed');
+          onWarning('Tab Closing');
           this.page = null;
           await page?.close();
 
           // close the browser window
-          onWarning('Browser Closed');
+          onWarning('Browser Closing');
+          console.timeEnd(infoColor('Time'));
           return this.browser?.close();
         }
-      } else {
-        return onWarning(path + ' has already been visited');
       }
     } catch (error) {
       onError(error);
