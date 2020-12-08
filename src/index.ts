@@ -19,39 +19,6 @@ export const onInfo = (msg: string) =>
 export const onWarning = (msg: string) =>
   console.info(warningColor('🚧:' + msg));
 
-export async function puppCall(
-  fn: ({
-    browser,
-    page,
-  }: {
-    browser: puppeteer.Browser;
-    page: puppeteer.Page;
-  }) => Promise<any>,
-  options?: puppeteer.LaunchOptions,
-  defaultBrowser?: puppeteer.Browser,
-  defaultPage?: puppeteer.Page,
-) {
-  let browser: puppeteer.Browser | null = null;
-
-  try {
-    // onInfo('Browser Opened');
-    // open a headless browser
-    browser =
-      defaultBrowser ||
-      (await puppeteer.launch({ headless: true, ...options }));
-    // open a new page (tab?)
-    const page = defaultPage || (await browser.newPage());
-
-    await fn({ browser, page });
-  } catch (error) {
-    onError(error);
-  } finally {
-    // close the browser window
-    await browser?.close();
-    // onInfo('Browser Closed');
-  }
-}
-
 export class Crawler {
   constructor(domain: string = process.argv[2]) {
     if (!domain) {
@@ -74,70 +41,96 @@ export class Crawler {
   domain: string;
   domainName: string;
   routes: string[] = [];
+  browser: puppeteer.Browser | null = null;
+  page: puppeteer.Page | null = null;
 
   wait(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  async init() {
+    // open a headless browser
+    if (!this.browser) {
+      onInfo('Browser Opened');
+      this.browser = await puppeteer.launch({ headless: false });
+    }
+
+    // open a new tab
+    if (!this.page) {
+      onInfo('Tab Opened');
+      this.page = await this.browser.newPage();
+    }
+
+    return { browser: this.browser, page: this.page };
+  }
+
   async crawl(path: string) {
-    await puppCall(
-      async ({ page }) => {
-        if (!this.routes.includes(path)) {
-          // goto page and add to routes
-          onInfo(
-            `Visiting ${path}: ${this.routes.indexOf(path)}/${
-              this.routes.length
-            } routes`,
-          );
-          this.routes.push(path);
-          await page.goto(path, { waitUntil: 'load', timeout: 0 });
+    const { page } = await this.init();
 
-          // take a screenshot
-          onInfo(`Screenshotting ${path}`);
-          await page.screenshot({
-            path: `./screenshots/${this.domainName}/${path
-              .replace(/http:\/\//gi, '')
-              .replace(/https:\/\//gi, '')
-              .replace(/\//gi, '-')}.png`,
-            fullPage: true,
-          });
+    try {
+      if (!this.routes.includes(path)) {
+        // goto page and add to routes
+        onInfo(
+          `Visiting ${path}: ${this.routes.indexOf(path)}/${
+            this.routes.length
+          } routes`,
+        );
+        this.routes.push(path);
+        await page.goto(path, { waitUntil: 'load', timeout: 0 });
 
-          // gather local links
-          onInfo(`Collecting Routes on ${path}`);
-          let localRoutes = await page?.evaluate(() =>
-            Array.from(
-              document.querySelectorAll('a[href^="/"]'),
-              (element) => element.getAttribute('href'),
-            ),
-          );
+        // take a screenshot
+        onInfo(`Screenshotting ${path}`);
+        await page.screenshot({
+          path: `./screenshots/${this.domainName}/${path
+            .replace(/http:\/\//gi, '')
+            .replace(/https:\/\//gi, '')
+            .replace(/\//gi, '-')}.png`,
+          fullPage: true,
+        });
 
-          localRoutes = localRoutes
-            ?.filter((route) => route !== '/')
-            .filter((route) => !this.routes.includes(route || ''));
+        // gather local links
+        onInfo(`Collecting Routes on ${path}`);
+        let localRoutes = await page?.evaluate(() =>
+          Array.from(
+            document.querySelectorAll('a[href^="/"]'),
+            (element) => element.getAttribute('href'),
+          ),
+        );
 
-          onInfo(
-            `Routes found at ${page?.url()}\n` +
-              localRoutes.map((route) => `    - ${route}`).join('\n'),
-          );
+        localRoutes = localRoutes
+          ?.filter((route) => route !== '/')
+          .filter((route) => !this.routes.includes(route || ''));
 
-          // forEach link crawl if not in routes already
-          for (let i = 0; i < localRoutes.length; i++) {
-            const localRoute = localRoutes[i];
+        onInfo(
+          `Routes found at ${page?.url()}\n` +
+            localRoutes.map((route) => `    - ${route}`).join('\n'),
+        );
 
-            await this.crawl(this.domain + localRoute);
-          }
+        // forEach link crawl if not in routes already
+        for (let i = 0; i < localRoutes.length; i++) {
+          const localRoute = localRoutes[i];
 
-          onInfo(
-            `All Routes: \n` +
-              this.routes.map((route) => `    - ${route}`).join('\n'),
-          );
-        } else {
-          onWarning(path + ' has already been visited');
+          await this.crawl(this.domain + localRoute);
         }
-      },
-      { headless: true },
-    );
+
+        onInfo(
+          `All Routes: \n` +
+            this.routes.map((route) => `    - ${route}`).join('\n'),
+        );
+
+        return localRoutes;
+      } else {
+        return onWarning(path + ' has already been visited');
+      }
+    } catch (error) {
+      onError(error);
+    } finally {
+      // close the browser window
+      onInfo('Tab Closed');
+      await page?.close();
+      this.page = null;
+    }
   }
 }
 
-export default new Crawler(process.argv[2]);
+export default new Crawler(process.argv[2] || 'https://gvempire.dev');
