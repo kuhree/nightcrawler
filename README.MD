@@ -23,6 +23,7 @@
 ## Table of contents
 
 - [Quick start](#quick-start)
+- [Features](#features)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -30,6 +31,10 @@
 - [Contributors](#contributors)
 - [Contact](#contact)
 - [License](#license)
+
+### Find 404s
+
+![](assets/sass.gvempire.dev-integrations.png)
 
 ## Quick start
 
