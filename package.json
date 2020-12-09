@@ -7,11 +7,11 @@
   "scripts": {
     "build": "rimraf ./dist; tsc",
     "build:dev": "tsc -w",
-    "crawl": "node dist/index.js -c",
-    "search": "node dist/index.js -s",
-    "start": "node dist/index.js",
+    "crawl": " NODE_ENV=production node dist/index.js -c",
+    "search": " NODE_ENV=production node dist/index.js -s",
+    "start": " NODE_ENV=production node dist/index.js",
     "changelog": "git log --all --graph --decorate --oneline > CHANGELOG; git add .; git commit -m \"update changelog\"; yarn version; git push --follow-tags; echo \"Released $npm_package_version\"",
-    "start:dev": "nodemon -w dist/",
+    "start:dev": " NODE_ENV=production nodemon -w dist/",
     "svg": "svgr -d ./dist/svg/ ./src/svg/assets  --config-file='./src/svg/svgr.config.js'",
     "test": "jest -c jest.config.js --runInBand --detectOpenHandles --forceExit"
   },
@@ -19,6 +19,7 @@
     "@svgr/cli": "^4.3.3",
     "@types/puppeteer": "^3.0.2",
     "chalk": "^4.1.0",
+    "dotenv": "^8.2.0",
     "prompt": "^1.0.0",
     "puppeteer": "^5.4.0"
   }

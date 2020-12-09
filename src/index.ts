@@ -1,8 +1,8 @@
 process.setMaxListeners(Infinity); // <== Important line
-
 import chalk from 'chalk';
 import fs from 'fs';
 import puppeteer from 'puppeteer';
+import '../env.js';
 
 export const errorColor = chalk.bold.red;
 export const successColor = chalk.keyword('green');
@@ -126,13 +126,33 @@ export class Crawler {
     // open a headless browser
     if (!this.browser) {
       onSuccess('Browser Opened');
-      this.browser = await puppeteer.launch({ headless: true });
+      this.browser = await puppeteer.launch({
+        headless: false,
+        args: ['--startMaximized'],
+        slowMo: 20,
+      });
     }
 
     // open a new tab
     if (this.browser && !this.page) {
       onSuccess('Tab Opened');
       this.page = await this.browser.newPage();
+
+      // set viewport and user agent (just in case for nice viewing)
+      await this.page.setViewport({
+        width: 1366,
+        height: 768,
+      });
+      await this.page.setUserAgent(
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36',
+      );
+
+      // set the HTTP Basic Authentication credential
+      await this.page.authenticate({
+        username: process.env.USERNAME || '',
+        password: process.env.PASSWORD || '',
+      });
+
       process.argv[3] === '-i' &&
         (await this.page.emulate(puppeteer.devices['iPhone X']));
     }
