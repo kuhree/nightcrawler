@@ -6,7 +6,7 @@
   <h3 align="center">NightCrawler</h3>
 
   <p align="center">
-    NightCrawler is a tool that allows to automate your portfolio screenshot process. Or just get a picture of every *linked* page on a website
+    NightCrawler is a collection of command line tools for crawling the web and dealing with it's data.
     <br>
     <a href="https://github.com/tkjohnson121/nightcrawler/issues/new?template=bug.md">Report bug</a>
     ·
@@ -32,13 +32,9 @@
 - [Contact](#contact)
 - [License](#license)
 
-### Find 404s
-
-![](assets/sass.gvempire.dev-integrations.png)
-
 ## Quick start
 
-Install with node `yarn add @gvempire/nightcrawler`
+Install with node `yarn add @gvempire/nightcrawlerm // coming soon`>
 
 Or Clone the repo
 
