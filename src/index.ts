@@ -16,7 +16,8 @@ export const onError = (error: Error) => {
 
 export const onSuccess = (msg: string) =>
   console.log(successColor('✅ : ' + msg));
-export const onInfo = (msg: string) => console.info(infoColor(msg));
+export const onInfo = (msg: string) =>
+  console.info(infoColor('🚀 : ' + msg));
 export const onWarning = (msg: string) =>
   console.info(warningColor('🚧 : ' + msg));
 
@@ -35,8 +36,8 @@ export const onWarning = (msg: string) =>
  */
 export class Crawler {
   constructor(options = process.argv) {
-    onSuccess('Crawler Loading...\n');
-    onSuccess('Good Vibes and Greater Ventures\n');
+    onSuccess('Crawler Loading...');
+    onSuccess('Good Vibes and Greater Ventures');
 
     if (options[2] === '-c' || options[2] === '--crawl') {
       const domain = options[3];
@@ -47,7 +48,7 @@ export class Crawler {
           domain,
         )
       ) {
-        onError(new Error('Domain is invalid\n'));
+        onError(new Error('Domain is invalid'));
       }
 
       this.domain = domain;
@@ -55,7 +56,7 @@ export class Crawler {
       this.allRoutes = [domain];
       console.time(infoColor('crawl'));
 
-      onSuccess(`Crawl starting on ${domain}\n`);
+      onSuccess(`Crawl starting on ${domain}`);
       this.crawl(domain);
     }
 
@@ -63,14 +64,14 @@ export class Crawler {
       const username = options[3];
 
       if (!username) {
-        onError(new Error('Username is invalid\n'));
+        onError(new Error('Username is invalid'));
       }
 
       this.username = username;
       this.domainName = username.split('@')[1];
       console.time(infoColor('search'));
 
-      onSuccess(`Crawl starting on ${username}\n`);
+      onSuccess(`Crawl starting on ${username}`);
       this.search(username);
     }
   }
@@ -106,7 +107,6 @@ export class Crawler {
       if (!fs.existsSync(__dirname + path)) {
         fs.mkdirSync(__dirname + path, { recursive: true });
       }
-      onSuccess('Folder ' + path + ' Created');
     } catch (error) {
       onError(error);
     }
@@ -116,7 +116,6 @@ export class Crawler {
     try {
       fs.writeFile(path, data, (err) => {
         if (err) return onError(err);
-        onSuccess('HTML File ' + path + ' Witten');
       });
     } catch (error) {
       onError(error);
@@ -124,15 +123,15 @@ export class Crawler {
   }
 
   async init() {
-    // open a headless browse
+    // open a headless browser
     if (!this.browser) {
-      onSuccess('Browser Opened\n');
+      onSuccess('Browser Opened');
       this.browser = await puppeteer.launch({ headless: true });
     }
 
     // open a new tab
     if (this.browser && !this.page) {
-      onSuccess('Tab Opened\n');
+      onSuccess('Tab Opened');
       this.page = await this.browser.newPage();
       process.argv[3] === '-i' &&
         (await this.page.emulate(puppeteer.devices['iPhone X']));
@@ -163,12 +162,12 @@ export class Crawler {
       index ||
       `${this.allRoutes?.indexOf(path)}/${this.allRoutes?.length}`;
 
-    process.argv[4] === '-d' && onInfo(`${pathIndex} - ${path}\n`);
+    process.argv[4] === '-d' && onInfo(`${pathIndex} - ${path}`);
 
     try {
       if (!this.pastRoutes.includes(path)) {
         // goto page and add to pastRoutes
-        onInfo(`${pathIndex} - VISITNG - ${path}\n`);
+        onInfo(`${pathIndex} - VISITNG - ${path}`);
         this.pastRoutes.push(path);
         await page?.goto(path, {
           waitUntil: 'networkidle0',
@@ -185,14 +184,14 @@ export class Crawler {
         await this.createFolder(screenshotPath);
 
         // take a screenshot
-        onInfo(`${pathIndex} - SCREENSHOT - ${path}\n`);
+        onInfo(`${pathIndex} - SCREENSHOT - ${path}`);
         await page?.screenshot({
           path: `${__dirname}/${screenshotPath}/screenshot.png`,
           fullPage: true,
         });
 
         // get html
-        onInfo(`${pathIndex} - SCRAPING - ${path}\n`);
+        onInfo(`${pathIndex} - SCRAPING - ${path}`);
         const html = await page?.evaluate(
           () => document.querySelector('*')?.outerHTML,
         );
@@ -203,7 +202,7 @@ export class Crawler {
           );
 
         // gather local links
-        onInfo(`${pathIndex} - SEARCHING - ${path}\n`);
+        onInfo(`${pathIndex} - SEARCHING - ${path}`);
         let localRoutes = await page?.evaluate(() =>
           Array.from(
             document.querySelectorAll("a[href^='/']"),
@@ -225,9 +224,19 @@ export class Crawler {
 
         if (localRoutes && localRoutes.length > 0) {
           onInfo(
-            `${pathIndex} - FOUND - ${path}\n` +
+            `${pathIndex} - FOUND - ${path}` +
               localRoutes.map((route) => `\t- ${route}`).join('\n') +
               '\n',
+          );
+
+          // store relative links
+          this.createFile(
+            `${__dirname}/${screenshotPath}/link.json`,
+            JSON.stringify(
+              { links: localRoutes, allRoutes: this.allRoutes },
+              null,
+              2,
+            ),
           );
         }
 
@@ -281,36 +290,40 @@ export class Crawler {
         await memo;
 
         const pathIndex = `${username} | ${smRef.key}`;
-        await this.createFolder(`/${username}/`);
+        await this.createFolder(`/${username}/${smRef.key}`);
 
         const url =
           typeof smRef.href === 'function'
             ? smRef.href(username)
             : smRef.href + username;
 
-        onInfo(`${pathIndex} - VISITNG - ${url}\n`);
+        onInfo(`${pathIndex} - VISITNG - ${url}`);
         await page?.goto(url, {
           waitUntil: 'networkidle0',
           timeout: 0,
         });
 
-        onInfo(`${pathIndex} - SCREENSHOT - ${url}\n`);
+        onInfo(`${pathIndex} - SCREENSHOT - ${url}`);
         await page?.screenshot({
-          path: __dirname + `/${username}/${smRef.key}.png`,
+          path: __dirname + `/${username}/${smRef.key}/screenshot.png`,
           fullPage: true,
         });
 
-        switch (smRef.key) {
-          default: {
-            onInfo(`${smRef.key} Captured`);
-            break;
-          }
-        }
+        // get html
+        onInfo(`${pathIndex} - SCRAPING - ${url}`);
+        const html = await page?.evaluate(
+          () => document.querySelector('*')?.outerHTML,
+        );
+        html &&
+          this.createFile(
+            `${__dirname}/${username}/${smRef.key}/index.html`,
+            html,
+          );
       }, this.wait(1024));
     } catch (error) {
       onError(error);
     } finally {
-      console.time(infoColor('search'));
+      console.timeEnd(infoColor('search'));
       this.exit();
     }
   }
