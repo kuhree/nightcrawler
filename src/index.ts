@@ -88,6 +88,7 @@ export class Crawler {
     { key: 'instagram', href: 'https://instagram.com/' },
     { key: 'facebook', href: 'https://facebook.com/' },
     { key: 'linkedin', href: 'https://linkedin.com/in/' },
+    { key: 'github', href: 'https://github.com/' },
   ];
 
   // for crawling
@@ -105,23 +106,28 @@ export class Crawler {
       if (!fs.existsSync(__dirname + path)) {
         fs.mkdirSync(__dirname + path, { recursive: true });
       }
-    } catch (err) {
-      onError(err);
+      onSuccess('Folder ' + path + ' Created');
+    } catch (error) {
+      onError(error);
     }
   }
 
-  async screenshot(name: string) {
-    this.page?.screenshot({
-      path: __dirname + `/screenshots/` + name,
-      fullPage: true,
-    });
+  async createFile(path: string, data: string) {
+    try {
+      fs.writeFile(path, data, (err) => {
+        if (err) return onError(err);
+        onSuccess('HTML File ' + path + ' Witten');
+      });
+    } catch (error) {
+      onError(error);
+    }
   }
 
   async init() {
     // open a headless browse
     if (!this.browser) {
       onSuccess('Browser Opened\n');
-      this.browser = await puppeteer.launch({ headless: false });
+      this.browser = await puppeteer.launch({ headless: true });
     }
 
     // open a new tab
@@ -157,28 +163,47 @@ export class Crawler {
       index ||
       `${this.allRoutes?.indexOf(path)}/${this.allRoutes?.length}`;
 
-    // goto page and add to pastRoutes
     process.argv[4] === '-d' && onInfo(`${pathIndex} - ${path}\n`);
 
     try {
       if (!this.pastRoutes.includes(path)) {
+        // goto page and add to pastRoutes
         onInfo(`${pathIndex} - VISITNG - ${path}\n`);
         this.pastRoutes.push(path);
-        await page?.goto(path, { waitUntil: 'load', timeout: 0 });
+        await page?.goto(path, {
+          waitUntil: 'networkidle0',
+          timeout: 0,
+        });
+
+        const screenshotPath =
+          `/` +
+          path
+            .replace(/http:\/\//gi, '')
+            .replace(/https:\/\//gi, '')
+            .replace(/\.[a-zA-z1-9]*/i, '');
+
+        await this.createFolder(screenshotPath);
 
         // take a screenshot
         onInfo(`${pathIndex} - SCREENSHOT - ${path}\n`);
         await page?.screenshot({
-          path: `./screenshots/${this.domainName}/${path
-            .replace(/http:\/\//gi, '')
-            .replace(/https:\/\//gi, '')
-            .replace(/\//gi, '-')}.png`,
+          path: `${__dirname}/${screenshotPath}/screenshot.png`,
           fullPage: true,
         });
 
+        // get html
+        onInfo(`${pathIndex} - SCRAPING - ${path}\n`);
+        const html = await page?.evaluate(
+          () => document.querySelector('*')?.outerHTML,
+        );
+        html &&
+          this.createFile(
+            `${__dirname}/${screenshotPath}/index.html`,
+            html,
+          );
+
         // gather local links
         onInfo(`${pathIndex} - SEARCHING - ${path}\n`);
-
         let localRoutes = await page?.evaluate(() =>
           Array.from(
             document.querySelectorAll("a[href^='/']"),
@@ -211,12 +236,7 @@ export class Crawler {
         await localRoutes?.reduce(async (memo, route) => {
           await memo;
 
-          if (
-            route &&
-            !/(login|sign-in|sign-up|sign in|sign up|register)/gi.test(
-              route,
-            )
-          ) {
+          if (route) {
             await this.crawl(this.domain + route);
           }
         }, this.wait(1024));
@@ -260,8 +280,8 @@ export class Crawler {
       await this.socialMediaRefs?.reduce(async (memo, smRef, i) => {
         await memo;
 
-        const pathIndex = `${username} | ${this.socialMediaRefs[i].key}`;
-        await this.createFolder(`/screenshots/${username}/`);
+        const pathIndex = `${username} | ${smRef.key}`;
+        await this.createFolder(`/${username}/`);
 
         const url =
           typeof smRef.href === 'function'
@@ -276,30 +296,13 @@ export class Crawler {
 
         onInfo(`${pathIndex} - SCREENSHOT - ${url}\n`);
         await page?.screenshot({
-          path:
-            __dirname +
-            `/screenshots/${username}/${this.socialMediaRefs[i].key}.png`,
+          path: __dirname + `/${username}/${smRef.key}.png`,
           fullPage: true,
         });
 
         switch (smRef.key) {
-          case 'twitter': {
-            onInfo('Twitter Captured');
-            break;
-          }
-          case 'instagram': {
-            onInfo('Instagram Captured');
-            break;
-          }
-          case 'facebook': {
-            onInfo('Facebook Captured');
-            break;
-          }
-          case 'linkedin': {
-            onInfo('LinkedIn Captured');
-            break;
-          }
           default: {
+            onInfo(`${smRef.key} Captured`);
             break;
           }
         }
