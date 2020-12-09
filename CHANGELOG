@@ -1,6 +1,28 @@
-* e2d65f0 (HEAD -> main) fiz: optomize \n\n
+* 7d28e12 (HEAD -> staging) add basic auth
+* 8670fbd add json links
+* de0b46e add html to crawler
+* 16d3719 init search function
+* f88acca --no-edit
+* 2c46386 some scpecial bits that ned work
+| * 36f6463 (origin/main, main) --no-edit
+| * 1e58ddd --no-edit
+| * 72a407e --no-edit
+| * 033ef2a Update index.md
+| * 5c7d0ca Set theme jekyll-theme-tactile
+| * 65ce023 --no-edit
+| * 1539db9 --no-edit
+| * c79751b update changelog
+| * bff7149 (tag: v1.0.4) v1.0.4
+| * e9c96c0 update changelog
+| * 7dc13d1 feat: add tsdocs
+| * 217f3a5 fix: install looping
+| * 0004dc7 (tag: v1.0.3) v1.0.3
+| * 380f449 update changelog
+|/  
+* daec96d docs: add more to readme, and package
+* e2d65f0 fiz: optomize \n\n
 * aeced73 moved puppCall
-* c0d3365 (tag: v1.0.2, origin/main) v1.0.2
+* c0d3365 (tag: v1.0.2) v1.0.2
 * 6ba479f update changelog
 * 8412519 (tag: v1.0.1) v1.0.1
 * 91c96ad update changelog
