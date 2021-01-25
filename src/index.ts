@@ -16,8 +16,7 @@ export const onError = (error: Error) => {
 
 export const onSuccess = (msg: string) =>
   console.log(successColor('✅ : ' + msg));
-export const onInfo = (msg: string) =>
-  console.info(infoColor('🚀 : ' + msg));
+export const onInfo = (msg: string) => console.info(infoColor('🚀 : ' + msg));
 export const onWarning = (msg: string) =>
   console.info(warningColor('🚧 : ' + msg));
 
@@ -74,6 +73,20 @@ export class Crawler {
       onSuccess(`Crawl starting on ${username}`);
       this.search(username);
     }
+
+    if (options[2] === '-r' || options[2] === '--reddit') {
+      const subreddit = options[3];
+
+      if (!subreddit) {
+        onError(new Error('Subreddit is invalid'));
+      }
+
+      this.subreddit = subreddit;
+      console.time(infoColor('search'));
+
+      onSuccess(`Reddit starting on ${subreddit}`);
+      this.reddit(subreddit);
+    }
   }
 
   browser: puppeteer.Browser | null = null;
@@ -97,6 +110,9 @@ export class Crawler {
   domainName?: string;
   pastRoutes: (string | null)[] = [];
   allRoutes?: (string | null)[];
+
+  // for reddit
+  subreddit?: string;
 
   wait(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -172,15 +188,11 @@ export class Crawler {
     this.browser = null;
   }
 
-  async crawl(
-    path: string,
-    index?: string | number | (string | number)[],
-  ) {
+  async crawl(path: string, index?: string | number | (string | number)[]) {
     const { page } = await this.init();
 
     const pathIndex =
-      index ||
-      `${this.allRoutes?.indexOf(path)}/${this.allRoutes?.length}`;
+      index || `${this.allRoutes?.indexOf(path)}/${this.allRoutes?.length}`;
 
     process.argv[4] === '-d' && onInfo(`${pathIndex} - ${path}`);
 
@@ -216,17 +228,13 @@ export class Crawler {
           () => document.querySelector('*')?.outerHTML,
         );
         html &&
-          this.createFile(
-            `${__dirname}/${screenshotPath}/index.html`,
-            html,
-          );
+          this.createFile(`${__dirname}/${screenshotPath}/index.html`, html);
 
         // gather local links
         onInfo(`${pathIndex} - SEARCHING - ${path}`);
         let localRoutes = await page?.evaluate(() =>
-          Array.from(
-            document.querySelectorAll("a[href^='/']"),
-            (element) => element.getAttribute('href'),
+          Array.from(document.querySelectorAll("a[href^='/']"), (element) =>
+            element.getAttribute('href'),
           ),
         );
 
@@ -278,8 +286,7 @@ export class Crawler {
             ?.slice(1)
             .every(
               (route) =>
-                this.pastRoutes.indexOf(`${this.domain}${route}`) !==
-                -1,
+                this.pastRoutes.indexOf(`${this.domain}${route}`) !== -1,
             )
         ) {
           console.timeEnd(infoColor('crawl'));
@@ -340,6 +347,82 @@ export class Crawler {
             html,
           );
       }, this.wait(1024));
+    } catch (error) {
+      onError(error);
+    } finally {
+      console.timeEnd(infoColor('search'));
+      this.exit();
+    }
+  }
+
+  /**
+   * Reddit
+   * Given a subreddit, download all images and videos
+   */
+  async reddit(subreddit: string, index?: number) {
+    const { page } = await this.init();
+
+    try {
+      const url = 'https://reddit.com/r/' + subreddit + '/top';
+      const pathIndex = `${subreddit}`;
+      await this.createFolder(`/${subreddit}`);
+
+      onInfo(`${pathIndex} - VISITNG - ${url}`);
+      await page?.goto(url, { waitUntil: 'networkidle0', timeout: 0 });
+
+      onInfo(`${pathIndex} - SCREENSHOT - ${url}`);
+      await page?.screenshot({
+        path: __dirname + `/${subreddit}/screenshot.png`,
+        fullPage: true,
+      });
+
+      // gather local links
+      onInfo(`${pathIndex} - Getting images - ${url}`);
+      let localImages = await page?.evaluate(() =>
+        Array.from(document.querySelectorAll('img'), (element) => ({
+          alt: element.getAttribute('alt'),
+          poster: element.getAttribute('poster'),
+          src: element.getAttribute('src'),
+        })),
+      );
+
+      localImages = localImages?.filter((image) => image.alt?.includes('Post'));
+
+      onInfo(`${pathIndex} - Getting videos - ${url}`);
+      const localVideos = await page?.evaluate(() =>
+        Array.from(document.querySelectorAll('video'), (element) => ({
+          poster: element.getAttribute('poster'),
+          src: element.getAttribute('src'),
+        })),
+      );
+
+      if (localImages && localImages.length > 0) {
+        onInfo(
+          `${pathIndex} - Images FOUND - ${url}` +
+            localImages.map((image) => `\t- ${image.src}`).join('\n') +
+            '\n',
+        );
+
+        // store images
+        this.createFile(
+          `${__dirname}/${pathIndex}/images.json`,
+          JSON.stringify(localImages, null, 2),
+        );
+      }
+
+      if (localVideos && localVideos.length > 0) {
+        onInfo(
+          `${pathIndex} - Videos FOUND - ${url}` +
+            localVideos.map((video) => `\t- ${video.src}`).join('\n') +
+            '\n',
+        );
+
+        // store videos
+        this.createFile(
+          `${__dirname}/${pathIndex}/videos.json`,
+          JSON.stringify(localVideos, null, 2),
+        );
+      }
     } catch (error) {
       onError(error);
     } finally {
