@@ -1,6 +1,10 @@
-*   6241694 (HEAD -> main) yes
+* c539c93 (HEAD -> main) add reddit subreddit search
+* 7db747b (origin/main, origin/HEAD) update deps
+* c552bfe (tag: v2.0.3) v2.0.3
+* 2c516d5 update changelog
+*   6241694 yes
 |\  
-| * b2f3897 (origin/staging, staging) v1.0.3
+| * b2f3897 (origin/staging) v1.0.3
 | * 82d0ca7 update changelog
 | * 7d28e12 add basic auth
 | * 8670fbd add json links
@@ -8,7 +12,7 @@
 | * 16d3719 init search function
 | * f88acca --no-edit
 | * 2c46386 some scpecial bits that ned work
-* | 36f6463 (origin/main) --no-edit
+* | 36f6463 --no-edit
 * | 1e58ddd --no-edit
 * | 72a407e --no-edit
 * | 033ef2a Update index.md
